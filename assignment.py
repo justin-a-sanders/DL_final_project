@@ -27,14 +27,17 @@ class Model(tf.keras.Model):
         self.learning_rate = 0.001
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
 
-        self.normalize = tf.keras.layers.BatchNormalization()
+        self.normalize_1 = tf.keras.layers.BatchNormalization()
+        self.normalize_2 = tf.keras.layers.BatchNormalization()
+        self.normalize_3 = tf.keras.layers.BatchNormalization()
 
-        self.conv_1 = tf.keras.layers.Conv2D(16, 5, strides = (2,2), padding='SAME', activation=tf.keras.layers.LeakyReLU(alpha=0.2), kernel_initializer=tf.random_normal_initializer(stddev=0.1), activity_regularizer=)
+
+        self.conv_1 = tf.keras.layers.Conv2D(16, 5, strides = (2,2), padding='SAME', activation=tf.keras.layers.LeakyReLU(alpha=0.2), kernel_initializer=tf.random_normal_initializer(stddev=0.1))
         self.pool_1 = tf.keras.layers.MaxPool2D((3, 3), strides=(2,2))
         self.conv_2 = tf.keras.layers.Conv2D(32, 3, strides = (2,2), padding='SAME', activation=tf.keras.layers.LeakyReLU(alpha=0.2), kernel_initializer=tf.random_normal_initializer(stddev=0.1))
         self.pool_2 = tf.keras.layers.MaxPool2D((2, 2), strides=(2,2))
         self.conv_3 = tf.keras.layers.Conv2D(32, 3, strides = (1,1), padding='SAME', activation=tf.keras.layers.LeakyReLU(alpha=0.2), kernel_initializer=tf.random_normal_initializer(stddev=0.1))
-        self.lstm = tf.keras.layers.LSTM(128, return_sequences=True, return_state=True)
+        self.lstm = tf.keras.layers.LSTM(32, return_sequences=True, return_state=True)
         self.distance = tf.keras.layers.Dense(2)
 
     def call(self, inputs, examples):
@@ -42,24 +45,24 @@ class Model(tf.keras.Model):
         Runs a forward pass on an input batch of images examples and test images
         """
         examples = self.conv_1(examples)
-        examples = self.normalize(examples)
+        examples = self.normalize_1(examples)
         examples = self.pool_1(examples)
         examples = self.conv_2(examples)
-        examples = self.normalize(examples)
+        examples = self.normalize_2(examples)
         examples = self.pool_2(examples)
         examples = self.conv_3(examples)
-        examples = self.normalize(examples)
+        examples = self.normalize_3(examples)
         examples = tf.reshape(examples, [self.num_examples, -1])
         _, merged_examples, _ = self.lstm(tf.expand_dims(examples, axis=0), initial_state=None)
 
         inputs = self.conv_1(inputs)
-        inputs = self.normalize(inputs)
+        inputs = self.normalize_1(inputs)
         inputs = self.pool_1(inputs)
         inputs = self.conv_2(inputs)
-        inputs = self.normalize(inputs)
+        inputs = self.normalize_2(inputs)
         inputs = self.pool_2(inputs)
         inputs = self.conv_3(inputs)
-        inputs = self.normalize(inputs)
+        inputs = self.normalize_3(inputs)
         inputs = tf.reshape(inputs, [self.batch_size, -1])
 
         merged_examples = tf.stack([merged_examples[0]] * self.batch_size)
@@ -91,9 +94,8 @@ class Model(tf.keras.Model):
         Calculates the model's prediction accuracy by comparing
         logits to correct labels
         """
-        labels = tf.cast(tf.argmax(labels, 1), tf.float32)
         logits = tf.cast(tf.math.greater_equal(logits, 0.5), tf.float32)
-        correct_predictions = tf.equal(labels, logits)
+        correct_predictions = tf.equal(tf.cast(labels, tf.float32), logits)
         return tf.reduce_mean(tf.cast(correct_predictions, tf.float32))
 
 def train(model, examples):
@@ -133,17 +135,19 @@ def train(model, examples):
         gradients = tape.gradient(loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
-def test(model, examples, test_inputs, test_labels):
+def test(model, test_inputs, negative_examples):
     """
     Tests the model on the test inputs and labels.
     """
-    for ii in range(len(examples)):
-        batch_inputs = train_inputs[ii : ii + model.batch_size]
-        batch_labels = train_labels[ii : ii + model.batch_size]
-
-        example_label = random.randint(0,model.num_classes-1)
-        example_indices = np.random.choice(len(examples[example_label]), model.num_examples)
-        batch_examples = examples[example_label][example_indices]
+    total_accuracy = []
+    for label in range(test_inputs.shape()):
+        negative_examples = tf.random.shuffle(negative_examples)[:50]
+        positive_examples = test_inputs[label][:50]
+        neg_acc = model.accuracy(model.call(negative_examples), np.zeros_like(negative_examples))
+        pos_acc = model.accuracy(model.call(negative_examples), np.ones_like(negative_examples))
+        total_accuracy.append(np.reduce_mean(neg_acc, pos_acc))
+    return np.reduce_mean(total_accuracy)
+    
 
 
 def visualize_loss(losses):
@@ -177,35 +181,41 @@ def visualize_acc(losses):
 
 def preprocess():
     #Load in the CIFAR 100 dataset
-    (train_data1, train_labels1), (train_data2, train_labels2) = tf.keras.datasets.cifar100.load_data(label_mode='fine')
+    # (train_data1, train_labels1), (train_data2, train_labels2) = tf.keras.datasets.cifar100.load_data(label_mode='fine')
+    (train_data, train_labels), (test_data, test_labels) = tf.keras.datasets.mnist.load_data()
 
-    train_data = [i for i in train_data1]
-    train_data += [j for j in train_data2]
-    train_data = np.asarray(train_data)
-    train_labels = np.append(train_labels1, train_labels2)
+    # train_data = [i for i in train_data1]
+    # train_data += [j for j in train_data2]
+    # train_data = np.asarray(train_data)
+    # train_labels = np.append(train_labels1, train_labels2)
 
-    examples = [[] for ii in range(100)]
+
+    examples = [[] for ii in range(10)]
     for ii in range(len(train_labels)):
         examples[train_labels[ii]].append(train_data[ii])
 
-    examples = np.asarray(examples).astype(np.float32)/255
-    return examples
+    for i in range(len(examples)):
+        examples[i] = examples[i][:5000]
+
+    examples = np.expand_dims(np.asarray(examples).astype(np.float32)/255, axis=-1)
+    return examples, test_data
 
 
 def main():
     #get train data
-    examples = preprocess()
-    print(examples.shape)
-
+    examples, test_negative_examples = preprocess()
+    train_data = examples[:8]
+    test_data = examples[8:]
     model = Model(100, 5)
 
-    for epoch in range(1000):
+    for epoch in range(100):
+        train(model, train_data)
         if epoch % 10 == 0:
             visualize_loss(model.loss_list)
             visualize_acc(model.acc_list)
         print(epoch)
-        #print(model.acc_list)
-        train(model, examples)
+        print(test(model, test_data, test_negative_examples))
+
 
 
 if __name__ == '__main__':
