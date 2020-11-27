@@ -53,7 +53,6 @@ class Model(tf.keras.Model):
 		examples = self.conv_3(examples)
 		examples = self.normalize_3(examples)
 		examples = tf.reshape(examples, [self.num_examples, -1])
-		print(examples.shape)
 		_, merged_examples, _ = self.lstm(tf.expand_dims(examples, axis=0), initial_state=None)
 
 		inputs = self.conv_1(inputs)
@@ -120,8 +119,8 @@ def train(model, examples):
 
 		batch_inputs = np.concatenate((batch_pos_inputs, batch_neg_inputs))
 		batch_labels = np.concatenate((batch_pos_labels, batch_neg_labels))
-		# print(batch_examples.shape)
-		# print(batch_inputs.shape)
+		# print(batch_examples.shape, "train_examples")
+		# print(batch_inputs.shape, "train_inputs")
 
 		with tf.GradientTape() as tape:
 			logits = model.call(batch_inputs, batch_examples)
@@ -146,9 +145,11 @@ def test(model, test_inputs, negative_examples):
 		batch_inputs = test_inputs[label][int(model.batch_size/2):int(model.batch_size/2)+model.num_examples]
 		batch_neg_examples = negative_examples[:int(model.batch_size/2)]
 		batch_pos_examples = test_inputs[label][:int(model.batch_size/2)]
-		examples = np.concatenate(batch_pos_examples, batch_neg_examples)
+		examples = np.concatenate((batch_pos_examples, batch_neg_examples))
 		labels = np.concatenate((np.ones(int(model.batch_size/2)), np.zeros(int(model.batch_size/2))))
-		total_accuracy.append(model.accuracy(model.call(batch_inputs, examples), labels))
+		# print(batch_inputs.shape, "test_inputs")
+		# print(examples.shape, "examples_test")
+		total_accuracy.append(model.accuracy(model.call(examples, batch_inputs), labels))
 	return np.mean(total_accuracy)
 	
 
