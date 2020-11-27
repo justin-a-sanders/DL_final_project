@@ -2,9 +2,9 @@ import tensorflow as tf
 from tensorflow.keras import layers
 from tensorflow.python.keras.utils import data_utils
 
-# This file builds an architecture similar to VGG-19 to create our image embeddings
+# This builds an architecture similar to VGG-19 to create our image embeddings
 # Our network removes the additional dense layers to only ouput feature embeddings instead of classifications
-# Pretrained weights from ImageNet are downloaded and then applied to the network so that we don't have to train it
+# Pretrained weights from ImageNet are then downloaded and applied to the network so that we don't have to train it
 
 # Builds our VGG-19-esque network
 def make_vgg(img_height, img_width):
@@ -47,7 +47,7 @@ def make_vgg(img_height, img_width):
     weights_path = data_utils.get_file('vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5', weights_no_top)
     model.load_weights(weights_path)
     
-    # Setting the layers as untrainable since we already loaded in weights
+    # Setting the layers as untrainable since we've already loaded in weights
     for layer in model.layers:
         layer.trainable = False
     
