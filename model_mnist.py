@@ -168,18 +168,32 @@ def visualize_loss(losses):
 	plt.savefig("episode_loss.jpg")
 	plt.clf()
 
-def visualize_acc(losses):
+def visualize_acc(accuracy_list):
 	"""
 	Uses Matplotlib to visualize the losses of our model.
 	:param losses: list of loss data stored from train. Can use the model's loss_list
 	field
 	"""
-	x = [i for i in range(len(losses))]
-	plt.plot(x, losses)
+	x = [i for i in range(len(accuracy_list))]
+	plt.plot(x, accuracy_list)
 	plt.title('Train Accuracy per batch')
 	plt.xlabel('Batch')
 	plt.ylabel('Acc')
 	plt.savefig("episode_acc.jpg")
+	plt.clf()
+
+def visualize_test_acc(accuracy_list):
+	"""
+	Uses Matplotlib to visualize the losses of our model.
+	:param losses: list of loss data stored from train. Can use the model's loss_list
+	field
+	"""
+	x = [i for i in range(len(accuracy_list))]
+	plt.plot(x, accuracy_list)
+	plt.title('Test Accuracy per batch')
+	plt.xlabel('Batch')
+	plt.ylabel('Acc')
+	plt.savefig("test_acc.jpg")
 	plt.clf()
 
 
@@ -219,14 +233,15 @@ def main():
 	test_negative_examples = test_negative_examples[:8]
 	model = Model(100, 5)
 
-	for epoch in range(100):
+	test_acc = []
+	for epoch in range(500):
 		train(model, train_data)
+		test_acc.append(test(model, test_data, test_negative_examples))
 		if epoch % 10 == 0:
 			visualize_loss(model.loss_list)
 			visualize_acc(model.acc_list)
+			visualize_test_acc(test_acc)
 		print(epoch)
-		print(test(model, test_data, test_negative_examples))
-
 
 
 if __name__ == '__main__':
