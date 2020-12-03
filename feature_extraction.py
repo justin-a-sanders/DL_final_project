@@ -6,11 +6,11 @@ from tensorflow.keras.datasets import cifar100
 Creates the feature extraction model.
 
 Currently supports VGG-16, but I'm also adding ResNet and Inception
-to help reduce the size of the feature output we are giving
+to help reduce the size of the feature output we're giving
 to the LSTM. 
 
 ^ (ResNet and Inception are a bit trickier since they need much larger
-input image sizes than CIFAR and only have pretrained weights from ImageNet,
+input image sizes than CIFAR and only have pretrained weights available from ImageNet,
 but I've adjusted their architectures to account for our smaller images
 and am training weights manually that we'll be able to use for that).
 """
