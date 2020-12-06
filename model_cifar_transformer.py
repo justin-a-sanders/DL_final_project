@@ -20,7 +20,7 @@ class Model(tf.keras.Model):
 
         self.similarity = tf.keras.losses.CosineSimilarity(axis = 1)
 
-        self.kqv_size = 64
+        self.kqv_size = 256
         self.embedding_size = 256
 
         self.W_k = tf.Variable(tf.random.truncated_normal([self.embedding_size, self.kqv_size], mean=0.0, stddev=.1))
@@ -29,7 +29,7 @@ class Model(tf.keras.Model):
 
         self.W_q1 = tf.constant(tf.identity(self.W_q))
 
-        self.dense = tf.keras.layers.Dense(self.embedding_size, activation='relu')
+        self.dense = tf.keras.layers.Dense(self.embedding_size)
 
         
         self.example_batch_size = 5
@@ -37,17 +37,17 @@ class Model(tf.keras.Model):
         self.loss_list = []
         self.acc_list = []
 
-        self.learning_rate = 0.01
+        self.learning_rate = 0.001
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
 
-        self.conv_1 = tf.keras.layers.Conv2D(32, 3, strides = (2,2), padding='SAME', activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
-        self.conv_2 = tf.keras.layers.Conv2D(32, 3, strides = (1,1), activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
+        self.conv_1 = tf.keras.layers.Conv2D(32, 3, strides = (2,2), padding='SAME', activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.01))
+        self.conv_2 = tf.keras.layers.Conv2D(32, 3, strides = (1,1), activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.01))
         self.pool_1 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
 
         #self.normalize1 = tf.keras.layers.BatchNormalization()
 
-        self.conv_3 = tf.keras.layers.Conv2D(64, 3, strides = (1,1), padding='SAME', activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
-        self.conv_4 = tf.keras.layers.Conv2D(64, 3, strides = (1,1), activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
+        self.conv_3 = tf.keras.layers.Conv2D(64, 3, strides = (1,1), padding='SAME', activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.01))
+        self.conv_4 = tf.keras.layers.Conv2D(64, 3, strides = (1,1), activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.01))
         self.pool_2 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
 
         #self.embed = tf.keras.layers.Dense(128, activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
@@ -142,7 +142,7 @@ class Model(tf.keras.Model):
         Calculates the model cross-entropy loss after one forward pass.
         """
         #return tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels, logits))
-        return tf.reduce_sum(tf.square(logits - tf.cast(labels, tf.float32)))
+        return tf.reduce_sum(tf.abs(logits - tf.cast(labels, tf.float32)))
 
     def accuracy(self, logits, labels):
         """
