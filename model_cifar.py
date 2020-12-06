@@ -7,6 +7,8 @@ import tensorflow as tf
 import numpy as np
 import random
 import math
+from datetime import datetime
+from feature_extraction import create_feats_model, normalize_imgs
 
 class Model(tf.keras.Model):
     def __init__(self, num_classes, num_examples):
@@ -28,15 +30,15 @@ class Model(tf.keras.Model):
         self.learning_rate = 0.001
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
 
-        self.conv_1 = tf.keras.layers.Conv2D(32, 3, strides = (2,2), padding='SAME', activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
-        self.conv_2 = tf.keras.layers.Conv2D(32, 3, strides = (1,1), activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
-        self.pool_1 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
+        # self.conv_1 = tf.keras.layers.Conv2D(32, 3, strides = (2,2), padding='SAME', activation='relu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
+        # self.conv_2 = tf.keras.layers.Conv2D(32, 3, strides = (1,1), activation='relu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
+        # self.pool_1 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
 
         #self.normalize1 = tf.keras.layers.BatchNormalization()
 
-        self.conv_3 = tf.keras.layers.Conv2D(64, 3, strides = (1,1), padding='SAME', activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
-        self.conv_4 = tf.keras.layers.Conv2D(64, 3, strides = (1,1), activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
-        self.pool_2 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
+        # self.conv_3 = tf.keras.layers.Conv2D(64, 3, strides = (1,1), padding='SAME', activation='relu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
+        # self.conv_4 = tf.keras.layers.Conv2D(64, 3, strides = (1,1), activation='relu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
+        # self.pool_2 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
 
         #self.embed = tf.keras.layers.Dense(128, activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
 
@@ -48,7 +50,10 @@ class Model(tf.keras.Model):
 
         #self.normalize3 = tf.keras.layers.BatchNormalization()
 
-        self.lstm = tf.keras.layers.LSTM(256, return_sequences=True, return_state=True)
+        self.feats_model = create_feats_model("vgg")
+
+        # self.lstm = tf.keras.layers.LSTM(256, return_sequences=True, return_state=True)
+        self.gru = tf.keras.layers.GRU(512, return_sequences=True, return_state=True)
 
         #self.distance = tf.keras.layers.Dense(2)
 
@@ -56,16 +61,27 @@ class Model(tf.keras.Model):
         """
         Runs a forward pass on an input batch of images examples and test images
         """
-        examples = tf.reshape(examples, (self.example_batch_size * self.num_examples, 32, 32, 3))
-        examples = self.conv_1(examples)
-        examples = self.conv_2(examples)
-        #examples = self.normalize1(examples)
-        examples = self.pool_1(examples)
+        # print("call inputs")
+        # print(inputs.shape)
+        # print("call examples")
+        # print(examples.shape)
 
-        examples = self.conv_3(examples)
-        examples = self.conv_4(examples)
+        examples = tf.reshape(examples, (self.example_batch_size * self.num_examples, 32, 32, 3))
+
+        # print("reshaped examples")
+        # print(examples.shape)
+
+        # print(examples[0])
+
+        # examples = self.conv_1(examples)
+        # examples = self.conv_2(examples)
+        # examples = self.normalize1(examples)
+        # examples = self.pool_1(examples)
+
+        # examples = self.conv_3(examples)
+        # examples = self.conv_4(examples)
         #examples = self.normalize2(examples)
-        examples = self.pool_2(examples)
+        # examples = self.pool_2(examples)
 
         #examples = self.conv_5(examples)
         #examples = self.conv_6(examples)
@@ -74,23 +90,36 @@ class Model(tf.keras.Model):
         #examples = tf.reshape(examples, (self.example_batch_size * self.num_examples, -1))
         #examples = self.embed(examples)
 
+        examples = self.feats_model(examples)
+
         examples = tf.reshape(examples, (self.example_batch_size, self.num_examples, -1))
+
+        # print("examples")
         # print(examples.shape)
 
-        _, merged_examples, _ = self.lstm(examples, initial_state=None)
+        _, merged_examples = self.gru(examples, initial_state=None)
+
+        # print("merged_examples")
+        # print(merged_examples.shape)
 
         #merged_examples = tf.reshape(examples, (self.example_batch_size, -1))
 
         inputs = tf.reshape(inputs, (self.example_batch_size * self.batch_size, 32, 32, 3))
-        inputs = self.conv_1(inputs)
-        inputs = self.conv_2(inputs)
-        #inputs = self.normalize1(inputs)
-        inputs = self.pool_1(inputs)
 
-        inputs = self.conv_3(inputs)
-        inputs = self.conv_4(inputs)
+        # print("reshaped inputs")
+        # print(inputs.shape)
+
+        # print(inputs[0])
+
+        # inputs = self.conv_1(inputs)
+        # inputs = self.conv_2(inputs)
+        #inputs = self.normalize1(inputs)
+        # inputs = self.pool_1(inputs)
+
+        # inputs = self.conv_3(inputs)
+        # inputs = self.conv_4(inputs)
         #inputs = self.normalize2(examples)
-        inputs = self.pool_2(inputs)
+        # inputs = self.pool_2(inputs)
 
         #inputs = self.conv_5(inputs)
         #inputs = self.conv_6(inputs)
@@ -99,15 +128,18 @@ class Model(tf.keras.Model):
         #inputs = tf.reshape(inputs, (self.example_batch_size * self.batch_size, -1))
         #inputs = self.embed(inputs)
 
+        inputs = self.feats_model(inputs)
+
         inputs = tf.reshape(inputs, (self.example_batch_size, self.batch_size, -1))
 
-        test = tf.stack([merged_examples] * self.example_batch_size, axis=1)
-        ex_dist = (-tf.keras.losses.cosine_similarity(test, examples) + 1) / 2
+        # print("inputs")
+        # print(inputs.shape)
+
+        # test = tf.stack([merged_examples] * self.example_batch_size, axis=1)
+        # ex_dist = (-tf.keras.losses.cosine_similarity(test, examples) + 1) / 2
         # print(ex_dist.numpy())
-        print(merged_examples.shape)
 
         merged_examples = tf.stack([merged_examples] * self.batch_size, axis=1)
-        print(merged_examples.shape)
         dist = (-tf.keras.losses.cosine_similarity(merged_examples, inputs) + 1) / 2
         return dist
 
@@ -256,20 +288,24 @@ def preprocess():
     train_data = [i for i in train_data1]
     train_data += [j for j in train_data2]
     train_data = np.asarray(train_data)
+    train_data = normalize_imgs(train_data) # normalizes our data based on the CIFAR 100 specs, improves CNN results
     train_labels = np.append(train_labels1, train_labels2)
 
     examples = [[] for ii in range(100)]
     for ii in range(len(train_labels)):
         examples[train_labels[ii]].append(train_data[ii])
 
-    examples_train = np.asarray(examples).astype(np.float32)/255
+    # examples_train = np.asarray(examples).astype(np.float32)/255
+    examples_train = np.asarray(examples).astype(np.float32)
 
 
     (_, _), (test_data, test_labels) = tf.keras.datasets.cifar10.load_data()
+    test_data = normalize_imgs(test_data) # normalizes the test images
     examples = [[] for ii in range(10)]
     for ii in range(len(test_labels)):
         examples[test_labels[ii][0]].append(test_data[ii])
 
+    # examples_test = np.asarray(examples).astype(np.float32)
     examples_test = np.asarray(examples).astype(np.float32)/255
 
     return examples_train, examples_test
@@ -287,10 +323,12 @@ def main():
     accuracies = []
     test_accuracies = []
     test_losses = []
-    for epoch in range(10000):
-        print(epoch)
-        visualize_loss(losses, test_losses)
-        visualize_acc(accuracies, test_accuracies)
+    for epoch in range(200):
+        start = datetime.now()
+        if epoch % 10 == 0:
+            print("Epoch", epoch)
+            visualize_loss(losses, test_losses)
+            visualize_acc(accuracies, test_accuracies)
 
         loss, acc = train(model, examples_train)
         losses.append(loss)
@@ -299,7 +337,7 @@ def main():
         test_acc, test_loss = test(model, examples_test)
         test_accuracies.append(test_acc)
         test_losses.append(test_loss)
-        print(test_acc)
+        print("Time for epoch:", (datetime.now() - start))
 
 
 if __name__ == '__main__':
