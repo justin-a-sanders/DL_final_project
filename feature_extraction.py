@@ -33,7 +33,8 @@ def create_feats_model(model_name="vgg"):
         # Freezes the layers in the model so that they're not trained with the LSTM
         freeze_layers(model_feats)
 
-        model_feats.summary()
+        print("VGG MODEL")
+        # model_feats.summary()
 
     # cases for model_name == "resnet" and model_name == "inception" will be in shortly
 
@@ -55,16 +56,16 @@ def freeze_layers(model):
 Normalizes our data based on the CIFAR 100 specs, improves CNN results
 (Expects image values to be from 0 to 255)
 
-train_imgs - the entire set of train images (can normalize them all at once before batching)
-test_imgs - the entire set of test images
+imgs - the entire set of train or test images (can normalize them all at once before batching)
 """
-def normalize_data(train_imgs, test_imgs):
+def normalize_imgs(imgs):
 
     mean = 121.936 # mean of the CIFAR 100 data
     std = 68.389 # standard deviation of the CIFAR 100 data
 
     # Adds a small number to the denominators so we don't divide by zero
-    norm_train_imgs = (train_imgs - mean) / (std + 1e-7)
-    norm_test_imgs = (test_imgs - mean) / (std + 1e-7)
+    norm_imgs = (imgs - mean) / (std + 1e-7)
 
-    return norm_train_imgs, norm_test_imgs
+    return norm_imgs
+
+# create_feats_model()
