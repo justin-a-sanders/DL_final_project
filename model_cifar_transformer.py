@@ -20,12 +20,24 @@ class Model(tf.keras.Model):
 
         self.similarity = tf.keras.losses.CosineSimilarity(axis = 1)
 
+        self.kqv_size = 64
+        self.embedding_size = 256
+
+        self.W_k = tf.Variable(tf.random.truncated_normal([self.embedding_size, self.kqv_size], mean=0.0, stddev=.1))
+        self.W_q = tf.Variable(tf.random.truncated_normal([self.embedding_size, self.kqv_size], mean=0.0, stddev=.1))
+        self.W_v = tf.Variable(tf.random.truncated_normal([self.embedding_size, self.kqv_size], mean=0.0, stddev=.1))
+
+        self.W_q1 = tf.constant(tf.identity(self.W_q))
+
+        self.dense = tf.keras.layers.Dense(self.embedding_size, activation='relu')
+
+        
         self.example_batch_size = 5
         self.batch_size = 64
         self.loss_list = []
         self.acc_list = []
 
-        self.learning_rate = 0.001
+        self.learning_rate = 0.01
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
 
         self.conv_1 = tf.keras.layers.Conv2D(32, 3, strides = (2,2), padding='SAME', activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
@@ -47,8 +59,6 @@ class Model(tf.keras.Model):
         #self.pool_3 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
 
         #self.normalize3 = tf.keras.layers.BatchNormalization()
-
-        self.lstm = tf.keras.layers.LSTM(256, return_sequences=True, return_state=True)
 
         #self.distance = tf.keras.layers.Dense(2)
 
@@ -75,9 +85,23 @@ class Model(tf.keras.Model):
         #examples = self.embed(examples)
 
         examples = tf.reshape(examples, (self.example_batch_size, self.num_examples, -1))
-        # print(examples.shape)
 
-        _, merged_examples, _ = self.lstm(examples, initial_state=None)
+        Z = []
+        # print(self.W_q - self.W_q1)
+
+        dk = tf.sqrt(tf.cast(self.kqv_size, tf.float32))
+
+
+        for i in range(self.example_batch_size):
+            K = tf.matmul(examples[i], self.W_k)
+            Q = tf.matmul(examples[i], self.W_q)
+            V = tf.matmul(examples[i], self.W_v)
+
+            Z.append(tf.nn.softmax(tf.matmul(tf.matmul(Q,tf.transpose(K))/dk, V)))
+
+        merged_examples = tf.reduce_mean(self.dense(tf.convert_to_tensor(Z)),axis=1)
+        # merged_examples = self.dense(tf.convert_to_tensor(Z))[:,0,:]
+        # print(merged_examples.shape)
 
         #merged_examples = tf.reshape(examples, (self.example_batch_size, -1))
 
@@ -102,12 +126,8 @@ class Model(tf.keras.Model):
         inputs = tf.reshape(inputs, (self.example_batch_size, self.batch_size, -1))
 
         test = tf.stack([merged_examples] * self.example_batch_size, axis=1)
-        ex_dist = (-tf.keras.losses.cosine_similarity(test, examples) + 1) / 2
-        # print(ex_dist.numpy())
-        print(merged_examples.shape)
 
         merged_examples = tf.stack([merged_examples] * self.batch_size, axis=1)
-        print(merged_examples.shape)
         dist = (-tf.keras.losses.cosine_similarity(merged_examples, inputs) + 1) / 2
         return dist
 
