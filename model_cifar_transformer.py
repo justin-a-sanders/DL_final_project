@@ -8,6 +8,11 @@ import numpy as np
 import random
 import math
 
+# Rerun transformer with old learning for 3000 epochs
+# Run transformer with VGG for feature extraction
+# Run lstm with smaller VGG
+# Baseline to show Top tomorrow
+
 class Model(tf.keras.Model):
     def __init__(self, num_classes, num_examples):
         """
@@ -97,9 +102,9 @@ class Model(tf.keras.Model):
             Q = tf.matmul(examples[i], self.W_q)
             V = tf.matmul(examples[i], self.W_v)
 
-            Z.append(tf.nn.softmax(tf.matmul(tf.matmul(Q,tf.transpose(K))/dk, V)))
+            Z.append(tf.matmul(tf.nn.softmax(tf.matmul(Q,tf.transpose(K))/dk), V))
 
-        merged_examples = tf.reduce_mean(self.dense(tf.convert_to_tensor(Z)),axis=1)
+        merged_examples = tf.reduce_mean(self.dense(tf.convert_to_tensor(Z)), axis=1)
         # merged_examples = self.dense(tf.convert_to_tensor(Z))[:,0,:]
         # print(merged_examples.shape)
 
@@ -129,6 +134,7 @@ class Model(tf.keras.Model):
 
         merged_examples = tf.stack([merged_examples] * self.batch_size, axis=1)
         dist = (-tf.keras.losses.cosine_similarity(merged_examples, inputs) + 1) / 2
+        # print("DIST:", dist)
         return dist
 
         #combined = tf.concat([merged_examples, inputs], 1)
