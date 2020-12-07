@@ -355,8 +355,8 @@ def main():
     test_losses = []
     for epoch in range(3000):
         print(epoch)
-        visualize_loss(losses, test_losses)
-        visualize_acc(accuracies, test_accuracies)
+        visualize_loss(model, losses, test_losses)
+        visualize_acc(model, accuracies, test_accuracies)
 
         loss, acc = train(model, examples_train)
         losses.append(loss)
