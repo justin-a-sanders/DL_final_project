@@ -305,7 +305,7 @@ def visualize_acc(model, train_acc, test_acc):
     plt.clf()
 
 
-def preprocess(vgg):
+def preprocess():
     #Load in the CIFAR 100 dataset
     (train_data1, train_labels1), (train_data2, train_labels2) = tf.keras.datasets.cifar100.load_data(label_mode='fine')
     train_data = [i for i in train_data1]
@@ -318,11 +318,7 @@ def preprocess(vgg):
     for ii in range(len(train_labels)):
         examples[train_labels[ii]].append(train_data[ii])
 
-    if vgg:
-        examples_train = np.asarray(examples).astype(np.float32)
-    else:
-        examples_train = np.asarray(examples).astype(np.float32)/255
-
+    examples_train = np.asarray(examples).astype(np.float32)
 
     (_, _), (test_data, test_labels) = tf.keras.datasets.cifar10.load_data()
     test_data = normalize_imgs(test_data)  # normalizes the test images
@@ -330,20 +326,17 @@ def preprocess(vgg):
     for ii in range(len(test_labels)):
         examples[test_labels[ii][0]].append(test_data[ii])
 
-    if vgg:
-        examples_test = np.asarray(examples).astype(np.float32)
-    else:
-        examples_test = np.asarray(examples).astype(np.float32)/255
+    examples_test = np.asarray(examples).astype(np.float32)
 
     return examples_train, examples_test
 
 
 def main():
-    # Changing this boolean allows us to choose whether we want to use pretrained feature extraction or not
+    # Changing this boolean chooses whether to use pretrained feature extraction or not
     vgg=True
 
     #get train data
-    examples_train, examples_test = preprocess(vgg)
+    examples_train, examples_test = preprocess()
     # print(examples_train.shape)
     # print(examples_test.shape)
 
