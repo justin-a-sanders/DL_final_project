@@ -30,14 +30,14 @@ class Model(tf.keras.Model):
         self.learning_rate = 0.001
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
 
-        # self.conv_1 = tf.keras.layers.Conv2D(32, 3, strides = (2,2), padding='SAME', activation='relu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
-        # self.conv_2 = tf.keras.layers.Conv2D(32, 3, strides = (1,1), activation='relu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
+        # self.conv_1 = tf.keras.layers.Conv2D(32, 3, strides = (2,2), padding='SAME', activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
+        # self.conv_2 = tf.keras.layers.Conv2D(32, 3, strides = (1,1), activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
         # self.pool_1 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
 
         #self.normalize1 = tf.keras.layers.BatchNormalization()
 
-        # self.conv_3 = tf.keras.layers.Conv2D(64, 3, strides = (1,1), padding='SAME', activation='relu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
-        # self.conv_4 = tf.keras.layers.Conv2D(64, 3, strides = (1,1), activation='relu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
+        # self.conv_3 = tf.keras.layers.Conv2D(64, 3, strides = (1,1), padding='SAME', activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
+        # self.conv_4 = tf.keras.layers.Conv2D(64, 3, strides = (1,1), activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
         # self.pool_2 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
 
         #self.embed = tf.keras.layers.Dense(128, activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
@@ -305,8 +305,8 @@ def preprocess():
     for ii in range(len(test_labels)):
         examples[test_labels[ii][0]].append(test_data[ii])
 
-    # examples_test = np.asarray(examples).astype(np.float32)
-    examples_test = np.asarray(examples).astype(np.float32)/255
+    # examples_test = np.asarray(examples).astype(np.float32)/255
+    examples_test = np.asarray(examples).astype(np.float32)
 
     return examples_train, examples_test
 
@@ -325,11 +325,6 @@ def main():
     test_losses = []
     for epoch in range(200):
         start = datetime.now()
-        if epoch % 10 == 0:
-            print("Epoch", epoch)
-            visualize_loss(losses, test_losses)
-            visualize_acc(accuracies, test_accuracies)
-
         loss, acc = train(model, examples_train)
         losses.append(loss)
         accuracies.append(acc)
@@ -337,7 +332,14 @@ def main():
         test_acc, test_loss = test(model, examples_test)
         test_accuracies.append(test_acc)
         test_losses.append(test_loss)
+
         print("Time for epoch:", (datetime.now() - start))
+        if epoch % 10 == 0:
+            print("Epoch", epoch)
+            print("Test Acc:", test_acc)
+
+            visualize_loss(losses, test_losses)
+            visualize_acc(accuracies, test_accuracies)
 
 
 if __name__ == '__main__':

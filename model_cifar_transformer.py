@@ -16,7 +16,7 @@ from feature_extraction import create_feats_model, normalize_imgs
 # Baseline to show Top tomorrow
 
 class Model(tf.keras.Model):
-    def __init__(self, num_classes, num_examples, vgg=False):
+    def __init__(self, num_classes, num_examples, vgg):
         """
         Define architecture for the model
         """
@@ -304,7 +304,7 @@ def visualize_acc(model, train_acc, test_acc):
     plt.clf()
 
 
-def preprocess():
+def preprocess(vgg):
     #Load in the CIFAR 100 dataset
     (train_data1, train_labels1), (train_data2, train_labels2) = tf.keras.datasets.cifar100.load_data(label_mode='fine')
     train_data = [i for i in train_data1]
@@ -317,7 +317,10 @@ def preprocess():
     for ii in range(len(train_labels)):
         examples[train_labels[ii]].append(train_data[ii])
 
-    examples_train = np.asarray(examples).astype(np.float32)/255
+    if vgg:
+        examples_train = np.asarray(examples).astype(np.float32)
+    else:
+        examples_train = np.asarray(examples).astype(np.float32)/255
 
 
     (_, _), (test_data, test_labels) = tf.keras.datasets.cifar10.load_data()
@@ -326,19 +329,24 @@ def preprocess():
     for ii in range(len(test_labels)):
         examples[test_labels[ii][0]].append(test_data[ii])
 
-    examples_test = np.asarray(examples).astype(np.float32)/255
+    if vgg:
+        examples_test = np.asarray(examples).astype(np.float32)
+    else:
+        examples_test = np.asarray(examples).astype(np.float32)/255
 
     return examples_train, examples_test
 
 
 def main():
+    # Changing this boolean allows us to choose whether we want to use pretrained feature extraction or not
+    vgg=True
+
     #get train data
-    examples_train, examples_test = preprocess()
+    examples_train, examples_test = preprocess(vgg)
     # print(examples_train.shape)
     # print(examples_test.shape)
 
-    # Changing this boolean allows us to choose whether we want to use pretrained feature extraction or not
-    model = Model(100, 5, vgg=True)
+    model = Model(100, 5, vgg=vgg)
 
     losses = []
     accuracies = []
