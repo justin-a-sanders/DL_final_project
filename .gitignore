@@ -3,3 +3,4 @@
 *.iml
 *.xml
 .idea/DL_final_project.iml
+*.pyc
