@@ -118,14 +118,9 @@ class Model(tf.keras.Model):
 
             Z.append(tf.matmul(tf.nn.softmax(tf.matmul(Q,tf.transpose(K))/dk), V))
 
-<<<<<<< HEAD
         # merged_examples = tf.reduce_mean(tf.convert_to_tensor(Z),axis=1)
         num = np.random.randint(5)
         merged_examples = tf.convert_to_tensor(Z)[:,num,:]
-=======
-        merged_examples = tf.reduce_mean(self.dense(tf.convert_to_tensor(Z)), axis=1)
-        # merged_examples = self.dense(tf.convert_to_tensor(Z))[:,0,:]
->>>>>>> e38c2c337b45bc1bd564f5278f4e5e8cf2875145
         # print(merged_examples.shape)
 
         #merged_examples = tf.reshape(examples, (self.example_batch_size, -1))
@@ -358,16 +353,11 @@ def main():
     accuracies = []
     test_accuracies = []
     test_losses = []
-<<<<<<< HEAD
     for epoch in range(3000):
         print(epoch)
         visualize_loss(losses, test_losses)
         visualize_acc(accuracies, test_accuracies)
 
-=======
-    for epoch in range(10000):
-        # start = datetime.now()
->>>>>>> e38c2c337b45bc1bd564f5278f4e5e8cf2875145
         loss, acc = train(model, examples_train)
         losses.append(loss)
         accuracies.append(acc)
