@@ -27,9 +27,9 @@ class Model(tf.keras.Model):
         self.W_q = tf.Variable(tf.random.truncated_normal([self.embedding_size, self.kqv_size], mean=0.0, stddev=.1))
         self.W_v = tf.Variable(tf.random.truncated_normal([self.embedding_size, self.kqv_size], mean=0.0, stddev=.1))
 
-        self.W_q1 = tf.constant(tf.identity(self.W_q))
+        # self.W_q1 = tf.constant(tf.identity(self.W_q))
 
-        self.dense = tf.keras.layers.Dense(self.embedding_size)
+        # self.dense = tf.keras.layers.Dense(self.embedding_size)
 
         
         self.example_batch_size = 5
@@ -97,10 +97,11 @@ class Model(tf.keras.Model):
             Q = tf.matmul(examples[i], self.W_q)
             V = tf.matmul(examples[i], self.W_v)
 
-            Z.append(tf.nn.softmax(tf.matmul(tf.matmul(Q,tf.transpose(K))/dk, V)))
+            Z.append(tf.matmul(tf.nn.softmax(tf.matmul(Q,tf.transpose(K))/dk), V))
 
-        merged_examples = tf.reduce_mean(self.dense(tf.convert_to_tensor(Z)),axis=1)
-        # merged_examples = self.dense(tf.convert_to_tensor(Z))[:,0,:]
+        # merged_examples = tf.reduce_mean(tf.convert_to_tensor(Z),axis=1)
+        num = np.random.randint(5)
+        merged_examples = tf.convert_to_tensor(Z)[:,num,:]
         # print(merged_examples.shape)
 
         #merged_examples = tf.reshape(examples, (self.example_batch_size, -1))
@@ -307,7 +308,7 @@ def main():
     accuracies = []
     test_accuracies = []
     test_losses = []
-    for epoch in range(10000):
+    for epoch in range(3000):
         print(epoch)
         visualize_loss(losses, test_losses)
         visualize_acc(accuracies, test_accuracies)
