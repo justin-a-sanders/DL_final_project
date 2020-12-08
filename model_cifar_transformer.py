@@ -118,9 +118,9 @@ class Model(tf.keras.Model):
 
             Z.append(tf.matmul(tf.nn.softmax(tf.matmul(Q,tf.transpose(K))/dk), V))
 
-        # merged_examples = tf.reduce_mean(tf.convert_to_tensor(Z),axis=1)
-        num = np.random.randint(5)
-        merged_examples = tf.convert_to_tensor(Z)[:,num,:]
+        merged_examples = tf.reduce_mean(tf.convert_to_tensor(Z),axis=1)
+        # num = np.random.randint(5)
+        # merged_examples = tf.convert_to_tensor(Z)[:,num,:]
         # print(merged_examples.shape)
 
         #merged_examples = tf.reshape(examples, (self.example_batch_size, -1))

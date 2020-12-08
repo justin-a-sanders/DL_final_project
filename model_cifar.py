@@ -30,30 +30,30 @@ class Model(tf.keras.Model):
         self.learning_rate = 0.001
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
 
-        # self.conv_1 = tf.keras.layers.Conv2D(32, 3, strides = (2,2), padding='SAME', activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
-        # self.conv_2 = tf.keras.layers.Conv2D(32, 3, strides = (1,1), activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
-        # self.pool_1 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
+        self.conv_1 = tf.keras.layers.Conv2D(32, 3, strides = (2,2), padding='SAME', activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
+        self.conv_2 = tf.keras.layers.Conv2D(32, 3, strides = (1,1), activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
+        self.pool_1 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
 
-        #self.normalize1 = tf.keras.layers.BatchNormalization()
+        self.normalize1 = tf.keras.layers.BatchNormalization()
 
-        # self.conv_3 = tf.keras.layers.Conv2D(64, 3, strides = (1,1), padding='SAME', activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
-        # self.conv_4 = tf.keras.layers.Conv2D(64, 3, strides = (1,1), activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
-        # self.pool_2 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
+        self.conv_3 = tf.keras.layers.Conv2D(64, 3, strides = (1,1), padding='SAME', activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
+        self.conv_4 = tf.keras.layers.Conv2D(64, 3, strides = (1,1), activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
+        self.pool_2 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
 
-        #self.embed = tf.keras.layers.Dense(128, activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
+        self.embed = tf.keras.layers.Dense(128, activation='elu', kernel_initializer=tf.random_normal_initializer(stddev=0.1))
 
-        #self.normalize2 = tf.keras.layers.BatchNormalization()
+        self.normalize2 = tf.keras.layers.BatchNormalization()
 
-        #self.conv_5 = tf.keras.layers.Conv2D(256, 3, strides = (1,1), padding='SAME', activation=tf.keras.layers.LeakyReLU(alpha=0.2), kernel_initializer=tf.random_normal_initializer(stddev=0.1))
-        #self.conv_6 = tf.keras.layers.Conv2D(256, 3, strides = (1,1), activation=tf.keras.layers.LeakyReLU(alpha=0.2), kernel_initializer=tf.random_normal_initializer(stddev=0.1))
-        #self.pool_3 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
+        self.conv_5 = tf.keras.layers.Conv2D(256, 3, strides = (1,1), padding='SAME', activation=tf.keras.layers.LeakyReLU(alpha=0.2), kernel_initializer=tf.random_normal_initializer(stddev=0.1))
+        self.conv_6 = tf.keras.layers.Conv2D(256, 3, strides = (1,1), activation=tf.keras.layers.LeakyReLU(alpha=0.2), kernel_initializer=tf.random_normal_initializer(stddev=0.1))
+        self.pool_3 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
 
-        #self.normalize3 = tf.keras.layers.BatchNormalization()
+        self.normalize3 = tf.keras.layers.BatchNormalization()
 
-        self.feats_model = create_feats_model("vgg")
+        # self.feats_model = create_feats_model("vgg")
 
         # self.lstm = tf.keras.layers.LSTM(256, return_sequences=True, return_state=True)
-        self.gru = tf.keras.layers.GRU(512, return_sequences=True, return_state=True)
+        self.gru = tf.keras.layers.GRU(256, return_sequences=True, return_state=True)
 
         #self.distance = tf.keras.layers.Dense(2)
 
@@ -73,24 +73,24 @@ class Model(tf.keras.Model):
 
         # print(examples[0])
 
-        # examples = self.conv_1(examples)
-        # examples = self.conv_2(examples)
-        # examples = self.normalize1(examples)
-        # examples = self.pool_1(examples)
+        examples = self.conv_1(examples)
+        examples = self.conv_2(examples)
+        examples = self.normalize1(examples)
+        examples = self.pool_1(examples)
 
-        # examples = self.conv_3(examples)
-        # examples = self.conv_4(examples)
-        #examples = self.normalize2(examples)
-        # examples = self.pool_2(examples)
+        examples = self.conv_3(examples)
+        examples = self.conv_4(examples)
+        examples = self.normalize2(examples)
+        examples = self.pool_2(examples)
 
-        #examples = self.conv_5(examples)
-        #examples = self.conv_6(examples)
-        #examples = self.normalize3(examples)
-        #examples = self.pool_3(examples)
-        #examples = tf.reshape(examples, (self.example_batch_size * self.num_examples, -1))
-        #examples = self.embed(examples)
+        # examples = self.conv_5(examples)
+        # examples = self.conv_6(examples)
+        # examples = self.normalize3(examples)
+        # examples = self.pool_3(examples)
+        # examples = tf.reshape(examples, (self.example_batch_size * self.num_examples, -1))
+        # examples = self.embed(examples)
 
-        examples = self.feats_model(examples)
+        # examples = self.feats_model(examples)
 
         examples = tf.reshape(examples, (self.example_batch_size, self.num_examples, -1))
 
@@ -98,6 +98,9 @@ class Model(tf.keras.Model):
         # print(examples.shape)
 
         _, merged_examples = self.gru(examples, initial_state=None)
+        _, merged_examples_2 = self.gru(tf.reverse(examples, [1]), initial_state=None)
+
+        merged_examples = tf.reduce_mean(tf.stack([merged_examples, merged_examples_2]), axis=0)
 
         # print("merged_examples")
         # print(merged_examples.shape)
@@ -111,24 +114,24 @@ class Model(tf.keras.Model):
 
         # print(inputs[0])
 
-        # inputs = self.conv_1(inputs)
-        # inputs = self.conv_2(inputs)
-        #inputs = self.normalize1(inputs)
-        # inputs = self.pool_1(inputs)
+        inputs = self.conv_1(inputs)
+        inputs = self.conv_2(inputs)
+        # inputs = self.normalize1(inputs)
+        inputs = self.pool_1(inputs)
 
-        # inputs = self.conv_3(inputs)
-        # inputs = self.conv_4(inputs)
-        #inputs = self.normalize2(examples)
-        # inputs = self.pool_2(inputs)
+        inputs = self.conv_3(inputs)
+        inputs = self.conv_4(inputs)
+        # inputs = self.normalize2(inputs)
+        inputs = self.pool_2(inputs)
 
-        #inputs = self.conv_5(inputs)
-        #inputs = self.conv_6(inputs)
-        #inputs = self.normalize3(examples)
-        #inputs = self.pool_3(inputs)
-        #inputs = tf.reshape(inputs, (self.example_batch_size * self.batch_size, -1))
-        #inputs = self.embed(inputs)
+        # inputs = self.conv_5(inputs)
+        # inputs = self.conv_6(inputs)
+        # inputs = self.normalize3(inputs)
+        # inputs = self.pool_3(inputs)
+        # inputs = tf.reshape(inputs, (self.example_batch_size * self.batch_size, -1))
+        # inputs = self.embed(inputs)
 
-        inputs = self.feats_model(inputs)
+        # inputs = self.feats_model(inputs)
 
         inputs = tf.reshape(inputs, (self.example_batch_size, self.batch_size, -1))
 
@@ -323,7 +326,7 @@ def main():
     accuracies = []
     test_accuracies = []
     test_losses = []
-    for epoch in range(200):
+    for epoch in range(1500):
         start = datetime.now()
         loss, acc = train(model, examples_train)
         losses.append(loss)
