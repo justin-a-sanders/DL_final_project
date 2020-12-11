@@ -152,8 +152,12 @@ class Model(tf.keras.Model):
         # test = tf.stack([merged_examples] * self.example_batch_size, axis=1)
 
         merged_examples = tf.stack([merged_examples] * self.batch_size, axis=1)
+        # print(inputs.shape, "inputs")
+        # print(merged_examples.shape, "merged")
         dist = (-tf.keras.losses.cosine_similarity(merged_examples, inputs) + 1) / 2
-        # print("DIST:", dist)
+        # dist = tf.reduce_mean(tf.square(merged_examples-inputs), axis=2)
+        # print("DIST:", tf.reduce_mean(dist))
+        # print(dist.shape)
         return dist
 
         #combined = tf.concat([merged_examples, inputs], 1)
@@ -167,7 +171,7 @@ class Model(tf.keras.Model):
         Calculates the model cross-entropy loss after one forward pass.
         """
         #return tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels, logits))
-        return tf.reduce_sum(tf.abs(logits - tf.cast(labels, tf.float32)))
+        return tf.reduce_sum(tf.sqrt(tf.abs((logits - tf.cast(labels, tf.float32)))))
 
     def accuracy(self, logits, labels):
         """
@@ -175,7 +179,8 @@ class Model(tf.keras.Model):
         logits to correct labels
         """
         labels = tf.cast(labels, tf.float32)
-        logits = tf.cast(tf.math.greater_equal(logits, 0.5), tf.float32)
+        # logits = tf.cast(tf.math.less_equal(logits, 1.0), tf.float32)
+        logits = tf.cast(tf.math.greater_equal(logits, 0.6), tf.float32)
         correct_predictions = tf.equal(labels, logits)
         return tf.reduce_mean(tf.cast(correct_predictions, tf.float32))
 
@@ -346,7 +351,7 @@ def main():
     accuracies = []
     test_accuracies = []
     test_losses = []
-    for epoch in range(3000):
+    for epoch in range(1300):
         print(epoch)
         visualize_loss(model, losses, test_losses)
         visualize_acc(model, accuracies, test_accuracies)
@@ -360,10 +365,9 @@ def main():
         test_losses.append(test_loss)
 
         # print("Time for epoch:", (datetime.now() - start))
+        print("Epoch:", epoch)
+        print("Test Acc:", test_acc)
         if epoch % 10 == 0:
-            print("Epoch:", epoch)
-            print("Test Acc:", test_acc)
-
             visualize_loss(model, losses, test_losses)
             visualize_acc(model, accuracies, test_accuracies)
 

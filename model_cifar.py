@@ -50,10 +50,14 @@ class Model(tf.keras.Model):
 
         self.normalize3 = tf.keras.layers.BatchNormalization()
 
+        self.feats_model = create_feats_model("vgg")
+
+        self.input_dense = tf.keras.layers.Dense(512)
+
         # self.feats_model = create_feats_model("vgg")
 
         # self.lstm = tf.keras.layers.LSTM(256, return_sequences=True, return_state=True)
-        self.gru = tf.keras.layers.GRU(256, return_sequences=True, return_state=True)
+        self.gru = tf.keras.layers.GRU(512, return_sequences=True, return_state=True)
 
         #self.distance = tf.keras.layers.Dense(2)
 
@@ -73,15 +77,15 @@ class Model(tf.keras.Model):
 
         # print(examples[0])
 
-        examples = self.conv_1(examples)
-        examples = self.conv_2(examples)
-        examples = self.normalize1(examples)
-        examples = self.pool_1(examples)
+        # examples = self.conv_1(examples)
+        # examples = self.conv_2(examples)
+        # examples = self.normalize1(examples)
+        # examples = self.pool_1(examples)
 
-        examples = self.conv_3(examples)
-        examples = self.conv_4(examples)
-        examples = self.normalize2(examples)
-        examples = self.pool_2(examples)
+        # examples = self.conv_3(examples)
+        # examples = self.conv_4(examples)
+        # examples = self.normalize2(examples)
+        # examples = self.pool_2(examples)
 
         # examples = self.conv_5(examples)
         # examples = self.conv_6(examples)
@@ -90,7 +94,7 @@ class Model(tf.keras.Model):
         # examples = tf.reshape(examples, (self.example_batch_size * self.num_examples, -1))
         # examples = self.embed(examples)
 
-        # examples = self.feats_model(examples)
+        examples = self.feats_model(examples)
 
         examples = tf.reshape(examples, (self.example_batch_size, self.num_examples, -1))
 
@@ -114,15 +118,15 @@ class Model(tf.keras.Model):
 
         # print(inputs[0])
 
-        inputs = self.conv_1(inputs)
-        inputs = self.conv_2(inputs)
-        # inputs = self.normalize1(inputs)
-        inputs = self.pool_1(inputs)
+        # inputs = self.conv_1(inputs)
+        # inputs = self.conv_2(inputs)
+        # ## inputs = self.normalize1(inputs)
+        # inputs = self.pool_1(inputs)
 
-        inputs = self.conv_3(inputs)
-        inputs = self.conv_4(inputs)
-        # inputs = self.normalize2(inputs)
-        inputs = self.pool_2(inputs)
+        # inputs = self.conv_3(inputs)
+        # inputs = self.conv_4(inputs)
+        # ## inputs = self.normalize2(inputs)
+        # inputs = self.pool_2(inputs)
 
         # inputs = self.conv_5(inputs)
         # inputs = self.conv_6(inputs)
@@ -131,9 +135,11 @@ class Model(tf.keras.Model):
         # inputs = tf.reshape(inputs, (self.example_batch_size * self.batch_size, -1))
         # inputs = self.embed(inputs)
 
-        # inputs = self.feats_model(inputs)
+        inputs = self.feats_model(inputs)
 
         inputs = tf.reshape(inputs, (self.example_batch_size, self.batch_size, -1))
+
+        inputs = self.input_dense(inputs)
 
         # print("inputs")
         # print(inputs.shape)
