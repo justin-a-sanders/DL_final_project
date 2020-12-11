@@ -54,115 +54,65 @@ class Model(tf.keras.Model):
 
         self.input_dense = tf.keras.layers.Dense(512)
 
-        # self.feats_model = create_feats_model("vgg")
-
-        # self.lstm = tf.keras.layers.LSTM(256, return_sequences=True, return_state=True)
         self.gru = tf.keras.layers.GRU(512, return_sequences=True, return_state=True)
-
-        #self.distance = tf.keras.layers.Dense(2)
 
     def call(self, inputs, examples):
         """
         Runs a forward pass on an input batch of images examples and test images
         """
-        # print("call inputs")
-        # print(inputs.shape)
-        # print("call examples")
-        # print(examples.shape)
 
         examples = tf.reshape(examples, (self.example_batch_size * self.num_examples, 32, 32, 3))
 
-        # print("reshaped examples")
-        # print(examples.shape)
-
-        # print(examples[0])
-
+        # if using handmade CNN
         # examples = self.conv_1(examples)
         # examples = self.conv_2(examples)
-        # examples = self.normalize1(examples)
         # examples = self.pool_1(examples)
 
         # examples = self.conv_3(examples)
         # examples = self.conv_4(examples)
-        # examples = self.normalize2(examples)
         # examples = self.pool_2(examples)
 
-        # examples = self.conv_5(examples)
-        # examples = self.conv_6(examples)
-        # examples = self.normalize3(examples)
-        # examples = self.pool_3(examples)
-        # examples = tf.reshape(examples, (self.example_batch_size * self.num_examples, -1))
-        # examples = self.embed(examples)
-
+        #if using VGG
         examples = self.feats_model(examples)
 
         examples = tf.reshape(examples, (self.example_batch_size, self.num_examples, -1))
 
-        # print("examples")
-        # print(examples.shape)
 
+        #combining grus of examples in two oposite orders
         _, merged_examples = self.gru(examples, initial_state=None)
         _, merged_examples_2 = self.gru(tf.reverse(examples, [1]), initial_state=None)
 
+        #take the mean of the two grus
         merged_examples = tf.reduce_mean(tf.stack([merged_examples, merged_examples_2]), axis=0)
 
-        # print("merged_examples")
-        # print(merged_examples.shape)
-
-        #merged_examples = tf.reshape(examples, (self.example_batch_size, -1))
 
         inputs = tf.reshape(inputs, (self.example_batch_size * self.batch_size, 32, 32, 3))
 
-        # print("reshaped inputs")
-        # print(inputs.shape)
-
-        # print(inputs[0])
-
+        # if using handmade CNN
         # inputs = self.conv_1(inputs)
         # inputs = self.conv_2(inputs)
-        # ## inputs = self.normalize1(inputs)
         # inputs = self.pool_1(inputs)
 
         # inputs = self.conv_3(inputs)
         # inputs = self.conv_4(inputs)
-        # ## inputs = self.normalize2(inputs)
         # inputs = self.pool_2(inputs)
 
-        # inputs = self.conv_5(inputs)
-        # inputs = self.conv_6(inputs)
-        # inputs = self.normalize3(inputs)
-        # inputs = self.pool_3(inputs)
-        # inputs = tf.reshape(inputs, (self.example_batch_size * self.batch_size, -1))
-        # inputs = self.embed(inputs)
-
+        #if using VGG
         inputs = self.feats_model(inputs)
 
         inputs = tf.reshape(inputs, (self.example_batch_size, self.batch_size, -1))
 
         inputs = self.input_dense(inputs)
 
-        # print("inputs")
-        # print(inputs.shape)
-
-        # test = tf.stack([merged_examples] * self.example_batch_size, axis=1)
-        # ex_dist = (-tf.keras.losses.cosine_similarity(test, examples) + 1) / 2
-        # print(ex_dist.numpy())
-
         merged_examples = tf.stack([merged_examples] * self.batch_size, axis=1)
         dist = (-tf.keras.losses.cosine_similarity(merged_examples, inputs) + 1) / 2
         return dist
-
-        #combined = tf.concat([merged_examples, inputs], 1)
-        #logits = self.distance(combined)
-        #return logits
-
 
 
     def loss(self, logits, labels):
         """
         Calculates the model cross-entropy loss after one forward pass.
         """
-        #return tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels, logits))
         return tf.reduce_sum(tf.square(logits - tf.cast(labels, tf.float32)))
 
     def accuracy(self, logits, labels):
@@ -179,39 +129,29 @@ def train(model, examples):
     '''
     Trains the model on all of the inputs and labels for one epoch.
     '''
-    #indices = tf.random.shuffle(range(0, len(train_labels)))
-    #train_inputs = tf.gather(train_inputs, indices)
-    #train_inputs = tf.image.random_flip_left_right(train_inputs)
-    #train_labels = tf.gather(train_labels, indices)
     accuracies = []
     losses = []
     indices = tf.random.shuffle(range(0, len(examples)))
     examples = examples[indices]
-    #examples = np.asarray([tf.image.random_flip_left_right(i) for i in examples])
+
     for i in range(len(examples)):
         examples[i] = tf.image.random_flip_left_right(examples[i])
 
     for ii in range(0, len(examples), model.example_batch_size):
         example_indices = np.random.choice(len(examples[ii]), model.num_examples)
         batch_examples = examples[ii:ii+model.example_batch_size,example_indices]
-        #print(batch_examples.shape)
 
         batch_pos_indices = np.random.choice(len(examples[ii]), int(model.batch_size/2))
         batch_pos_inputs = examples[ii:ii+model.example_batch_size,batch_pos_indices]
         batch_pos_labels = np.zeros((model.example_batch_size, int(model.batch_size/2)))
         batch_pos_labels += 1
-        #print(batch_pos_inputs.shape)
 
         batch_neg_indices = (np.random.choice(len(examples), int(model.batch_size/2)) , np.random.choice(len(examples[ii]), int(model.batch_size/2)))
         batch_neg_inputs = np.asarray([examples[batch_neg_indices] for i in range(model.example_batch_size)])
         batch_neg_labels = np.zeros((model.example_batch_size, int(model.batch_size/2)))
-        #print(batch_neg_inputs.shape)
-        #batch_neg_labels[:,0] = 1
 
         batch_inputs = np.concatenate((batch_pos_inputs, batch_neg_inputs), axis=1)
-        #print(batch_inputs.shape)
         batch_labels = np.concatenate((batch_pos_labels, batch_neg_labels), axis=1)
-        #print(batch_labels.shape)
 
         with tf.GradientTape() as tape:
             logits = model.call(batch_inputs, batch_examples)
@@ -253,9 +193,6 @@ def test(model, examples):
             acc_list.append(model.accuracy(logits, batch_labels))
             loss_list.append(model.loss(logits, batch_labels))
     return (sum(acc_list)/(len(acc_list))).numpy() ,  (sum(loss_list)/(len(loss_list))).numpy()
-
-
-
 
 
 def visualize_loss(train_loses, test_loses):
@@ -304,7 +241,6 @@ def preprocess():
     for ii in range(len(train_labels)):
         examples[train_labels[ii]].append(train_data[ii])
 
-    # examples_train = np.asarray(examples).astype(np.float32)/255
     examples_train = np.asarray(examples).astype(np.float32)
 
 
@@ -314,7 +250,6 @@ def preprocess():
     for ii in range(len(test_labels)):
         examples[test_labels[ii][0]].append(test_data[ii])
 
-    # examples_test = np.asarray(examples).astype(np.float32)/255
     examples_test = np.asarray(examples).astype(np.float32)
 
     return examples_train, examples_test
@@ -323,8 +258,6 @@ def preprocess():
 def main():
     #get train data
     examples_train, examples_test = preprocess()
-    # print(examples_train.shape)
-    # print(examples_test.shape)
 
     model = Model(100, 5)
 

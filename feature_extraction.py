@@ -3,16 +3,7 @@ import numpy as np
 from tensorflow.keras.datasets import cifar100
 
 """
-Creates the feature extraction model.
-
-Currently supports VGG-16, but I'm also adding ResNet and Inception
-to help reduce the size of the feature output we're giving
-to the LSTM. 
-
-^ (ResNet and Inception are a bit trickier since they need much larger
-input image sizes than CIFAR and only have pretrained weights available from ImageNet,
-but I've adjusted their architectures to account for our smaller images
-and am training weights manually that we'll be able to use for that).
+Creates the feature extraction model using VGG-16 based architecture modefied to work on 32x32 images
 """
 def create_feats_model(model_name="vgg"):
     if model_name == "vgg":
@@ -34,9 +25,6 @@ def create_feats_model(model_name="vgg"):
         freeze_layers(model_feats)
 
         print("VGG MODEL")
-        # model_feats.summary()
-
-    # cases for model_name == "resnet" and model_name == "inception" will be in shortly
 
         return model_feats
     """
@@ -67,5 +55,3 @@ def normalize_imgs(imgs):
     norm_imgs = (imgs - mean) / (std + 1e-7)
 
     return norm_imgs
-
-# create_feats_model()
